@@ -65,9 +65,16 @@ void draw_polygon(
         float p1x = polygon_xy[i1_vtx * 2 + 0] - x;
         float p1y = polygon_xy[i1_vtx * 2 + 1] - y;
         // write a few lines of code to compute winding number (hint: use atan2)
+        // winding_numberは１か-1になるはず
+        // 今回は-1になってるみたいなので、tempに-1をかけた
+        // -1になってること気づかなくてめっちゃ、はまった
+        // デバッグ実行のやり方がわからない
+        float temp = -(atan2(p1y, p1x) - atan2(p0y, p0x)) / (4 * atan2(1.0, 0.0));
+        if (temp > 0.5) temp--; else if (temp < -0.5) temp++;
+        winding_number += temp;
       }
       const int int_winding_number = int(std::round(winding_number));
-      if (int_winding_number == 1 ) { // if (x,y) is inside the polygon
+      if (int_winding_number == 1) { // if (x,y) is inside the polygon
         img_data[ih*width + iw] = brightness;
       }
     }
@@ -91,6 +98,44 @@ void dda_line(
   auto dx = x1 - x0;
   auto dy = y1 - y0;
   // write some code below to paint pixel on the line with color `brightness`
+  // とりあえず端っこ塗る。二度塗りになっても気にしない。
+  img_data[(int)y1 * width + (int)x1] = brightness;
+  // dx==0の場合は特別扱い
+  if (dx == 0) {
+    int step;
+    if (dy > 0) step = 1; else step = -1;
+    for (int i = 0; i < abs(dy); i++) {
+      img_data[(int)y0 * width + (int)x0] = brightness;
+      y0 += step;
+    }
+    return;
+  }
+  auto m = dy / dx;
+  float stepx, stepy; // 単位ステップで進む量
+  int length; // 軸方向の線の長さ。軸は角度によって変わる
+  // 角度によって処理を変える
+  if (m >= 1 || m <= -1) {
+    stepx = dx / dy;
+    stepy = 1;
+    length = abs(dy);
+  } else {
+    stepx = 1;
+    stepy = m;
+    length = abs(dx);
+  }
+  // 進む向き
+  if (dx < 0) {
+    stepx = -stepx;
+    stepy = -stepy;
+  }
+  float px = x0;
+  float py = y0;
+  // メインループ
+  for (int i = 0; i <= length; i++) {
+    img_data[(int)py * width + (int)px] = brightness;
+    px = x0 + stepx * i;
+    py = y0 + stepy * i;
+  }
 }
 
 int main() {
@@ -118,4 +163,3 @@ int main() {
   stbi_write_png(
       (std::filesystem::path(PROJECT_SOURCE_DIR) / "output.png").string().c_str(),
       width, height, 1,img_data.data(), width);
-}
