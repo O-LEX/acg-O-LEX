@@ -132,7 +132,7 @@ void dda_line(
   float py = y0;
   // メインループ
   for (int i = 0; i <= length; i++) {
-    img_data[(int)py * width + (int)px] = brightness;
+    img_data[(int)py * width + (int)px] = brightness; // これだと上下逆か？
     px = x0 + stepx * i;
     py = y0 + stepy * i;
   }
@@ -163,3 +163,4 @@ int main() {
   stbi_write_png(
       (std::filesystem::path(PROJECT_SOURCE_DIR) / "output.png").string().c_str(),
       width, height, 1,img_data.data(), width);
+}
