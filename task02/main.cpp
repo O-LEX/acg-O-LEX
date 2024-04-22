@@ -65,8 +65,64 @@ int number_of_intersection_ray_against_quadratic_bezier(
     const Eigen::Vector2f &pc,
     const Eigen::Vector2f &pe) {
   // comment out below to do the assignment
-  return number_of_intersection_ray_against_edge(org, dir, ps, pe);
+  // return number_of_intersection_ray_against_edge(org, dir, ps, pe);
   // write some code below to find the intersection between ray and the quadratic
+  const Eigen::Vector2f ver_dir(-dir[1], dir[0]);
+  auto f0 = [=](float t){return (((1-t)*(1-t)*ps + 2*(1-t)*t*pc + t*t*pe) - org).dot(ver_dir);};
+  auto f1 = [=](float t){return (2*((t-1)*ps + (1-2*t)*pc + t*pe)).dot(ver_dir);};
+  float f2 = -((ps.cwiseProduct(pe)-pc.cwiseProduct(pc)).cwiseQuotient(ps-2*pc+pe)-org).dot(ver_dir);
+  float a = 0, b = 1;
+  float c, d;
+  int count0 = 0, count1 = 0;
+  int flag = 0;
+  if (f0(a) * f1(a) < 0 ){count0++;}
+  if (f1(a) * f2 < 0 ){count0++;}
+  if (f0(b) * f1(b) < 0 ){count1++;}
+  if (f1(b) * f2 < 0 ){count1++;}
+  if (count0 - count1 == 0){return 0;}
+  if (count0 - count1 == 2){flag += 1;}
+  for (int i = 0; i < 1000; i++){
+    c = (a+b)/2;
+    count1 = 0;
+    if (f0(c) * f1(c) < 0 ){count1++;}
+    if (f1(c) * f2 < 0 ){count1++;}
+    if (count0 - count1 == 0){
+      a = c;
+    }else if (flag == 1 && count0 - count1 == 1){
+      flag += 1;
+      d = c;
+      b = c;
+    }else{
+      b = c;
+    }
+  }
+  int ret = 0;
+  if ((((1-a)*(1-a)*ps + 2*(1-a)*a*pc + a*a*pe) - org).dot(dir) > 0){
+    ret += 1;
+  }
+  if (flag){
+    // printf("flag = 2\n");
+    a = d;
+    b = 1;
+    count0 = 0;
+    if (f0(a) * f1(a) < 0 ){count0++;}
+    if (f1(a) * f2 < 0 ){count0++;}
+    for (int i = 0; i < 10; i++){
+      c = (a+b)/2;
+      count1 = 0;
+      if (f0(c) * f1(c) < 0 ){count1++;}
+      if (f1(c) * f2 < 0 ){count1++;}
+      if (count0 - count1 == 0){
+        a = c;
+      }else{
+        b = c;
+      }
+    }
+    if ((((1-a)*(1-a)*ps + 2*(1-a)*a*pc + a*a*pe) - org).dot(dir) > 0){
+    ret += 1;
+    }
+  }
+  return ret;
 }
 
 int main() {
