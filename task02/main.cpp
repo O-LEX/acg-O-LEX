@@ -79,6 +79,42 @@ int number_of_intersection_ray_against_quadratic_bezier(
   // comment out below to do the assignment
   // return number_of_intersection_ray_against_edge(org, dir, ps, pe);
   // write some code below to find the intersection between ray and the quadratic
+  // sturm theoryを使って二分法で解を求める
+  const Eigen::Vector2f ver_dir(-dir[1], dir[0]);
+  auto f0 = [=](float t){return (((1-t)*(1-t)*ps + 2*(1-t)*t*pc + t*t*pe) - org).dot(ver_dir);};
+  auto f1 = [=](float t){return (2*((t-1)*ps + (1-2*t)*pc + t*pe)).dot(ver_dir);};
+  float f2 = -((ps.cwiseProduct(pe)-pc.cwiseProduct(pc)).cwiseQuotient(ps-2*pc+pe)-org).dot(ver_dir);
+
+  int count0 = 0, count1 = 0; // sturm numberを求める
+  bool flag = false; //　交点が二つあるかどうか
+  int ret = 0; //　返り値
+  if(f0(0)*f1(0)<0){count0++;} // sturm numberの計算
+  if(f1(0)*f2<0){count0++;}
+  if(f0(1)*f1(1)<0){count1++;}
+  if(f1(1)*f2<0){count1++;}
+  if(count0-count1==0){return 0;}
+  else if((count0-count1)==2){flag=true;} // 交点が二つある
+  float t = calc(0, 1, f0, f1, f2, 0); // 二分法のために再帰関数calcを使った。実装は上にある
+  if((((1-t)*(1-t)*ps + 2*(1-t)*t*pc + t*t*pe) - org).dot(dir)>0){ret++;} // 二つのベクトルが同じ向きかどうかを調べる
+
+  if(flag){ // 交点が二つある場合
+    count0 = 0;
+    if(f0(t)*f1(t)<0){count0++;}
+    if(f1(t)*f2<0){count0++;}
+    /*
+    二つの交点におけるtの値が非常に近い場合、両方の交点を求めることが難しい
+    二分法を用いて交点を求めるcalc関数では交点の存在する範囲の上界を返す
+    この上界と1の間の交点の数が0であれば、二つの交点におけるtの値は非常に近い
+    tの値が非常に近い場合、二つの交点の座標も近いことが予想される
+    この時、intersectionは0もしくは2になる
+    よって今回は0を返すようにしている
+    */
+    if((count0-count1)==0){return 0;}
+    t = calc(t, 1, f0, f1, f2, 0); //　二つめのtを求める
+    if((((1-t)*(1-t)*ps + 2*(1-t)*t*pc + t*t*pe) - org).dot(dir)>0){ret++;}
+  }
+  return ret;
+}
 
 int main() {
   const auto input_file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "r.svg";
