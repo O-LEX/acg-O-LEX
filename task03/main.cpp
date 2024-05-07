@@ -70,6 +70,23 @@ void draw_3d_triangle_with_texture(
       Eigen::Matrix4f coeff;
       Eigen::Vector4f rhs;
 
+      // ヒントが全く理解できなかった
+
+      // z座標を無視してバリセントリック座標を考える
+      // これは平行投影でありバリセントリック座標は変わらない
+      // wで割ってバリセントリック座標を求める場合透視投影になる
+      // よってwで割る前のバリセントリック座標を求める
+
+      float a = bc[0]/q0(3);
+      float b = bc[1]/q1(3);
+      float c = bc[2]/q2(3);
+
+      float w = 1/(a+b+c);
+
+      bc[0] = a*w;
+      bc[1] = b*w;
+      bc[2] = c*w;
+
       // do not change below
       auto uv = uv0 * bc[0] + uv1 * bc[1] + uv2 * bc[2]; // uv coordinate of the pixel
       // compute pixel coordinate of the texture
