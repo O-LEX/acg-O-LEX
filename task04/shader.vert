@@ -27,6 +27,12 @@ void main()
         //x0 = ???
         //y0 = ???
         //z0 = ???
+        vec3 v = vec3(x0, y0, z0) - org;
+        vec3 r = vec3(x0, y0, z0) - 2.0 * dot(v, nrm) * nrm;
+        x0 = r.x;
+        y0 = r.y;
+        z0 = (r.z + z0) / 2.0;
+        // z0 is mirror position
     }
     // do not edit below
 
