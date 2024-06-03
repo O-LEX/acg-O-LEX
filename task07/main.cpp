@@ -326,7 +326,7 @@ void output_float_image(
     const std::vector<float>& img_data) {
   std::vector<unsigned char> img_u8(img_height * img_width, 0);
   for(int i=0;i<img_width*img_height;++i){
-    float data = img_data[img_height+i];
+    float data = img_data[i]; // bug???
     auto c = static_cast<unsigned char>(std::pow(data,1./2.2)*255.0); // gamma correction
     img_u8[i] = c;
   }
@@ -367,7 +367,7 @@ int main() {
         if (hit1_object == -1){ continue; }
         float hit1_rad = spheres[hit1_object].emission;
         // compute the contribution for this pixel
-        float rad = 0.f; // replace this with some code
+        float rad = (1.0f/nsample)*(hit0_brdf*(hit0_normal.dot(hit0_refl))*hit1_rad/hit0_pdf); // replace this with some code
         img_light[ih * img_width + iw] += rad;
       }
       // -----------------
@@ -386,7 +386,7 @@ int main() {
         if (hit1_object == -1){ continue; }
         float hit1_rad = spheres[hit1_object].emission;
         // compute the contribution for this pixel
-        float rad = 0.f; // replace this with some code
+        float rad = (1.0f/nsample)*(hit0_brdf*(hit0_normal.dot(hit0_refl))*hit1_rad/hit0_pdf); // replace this with some code
         img_brdf[ih * img_width + iw] += rad;
       }
       // -----------------
@@ -404,7 +404,8 @@ int main() {
         float hit1_rad = spheres[hit1_object].emission;
         float hit0_pdf_brdf_sample = spheres[hit0_object].pdf(hit0_normal, cam_ray_dir, hit0_refl);
         float hit0_pdf_light_sample = pdf_light_sample(hit0_normal, hit0_pos, cam_ray_dir, hit0_refl, hit0_object);
-        float rad = 0.f; // write some code
+        float wlight = hit0_pdf_light_sample / (hit0_pdf_brdf_sample + hit0_pdf_light_sample);
+        float rad = (1.0f/nsample)*wlight*(hit0_brdf*(hit0_normal.dot(hit0_refl))*hit1_rad/hit0_pdf_light_sample); // write some code
         img_mis[ih * img_width + iw] += rad;
       }
       for (int isample = 0; isample < nsample / 2; ++isample) {
@@ -416,12 +417,12 @@ int main() {
         float hit1_rad = spheres[hit1_object].emission;
         float hit0_pdf_light_sample = pdf_light_sample(hit0_normal, hit0_pos, cam_ray_dir, hit0_refl, hit0_object);
         float hit0_pdf_brdf_sample = spheres[hit0_object].pdf(hit0_normal, cam_ray_dir, hit0_refl);
-        float rad = 0.f; // write some code
+        float wbrdf = hit0_pdf_brdf_sample / (hit0_pdf_brdf_sample + hit0_pdf_light_sample);
+        float rad = (1.0f/nsample)*wbrdf*(hit0_brdf*(hit0_normal.dot(hit0_refl))*hit1_rad/hit0_pdf_brdf_sample); // write some code
         img_mis[ih * img_width + iw] += rad;
       }
     }
   }
-
   output_float_image(
       (std::filesystem::path(PROJECT_SOURCE_DIR) / "out_brdf.png").string().c_str(),
       img_width, img_height, img_brdf);
